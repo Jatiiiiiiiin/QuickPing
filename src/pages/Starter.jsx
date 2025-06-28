@@ -4,14 +4,26 @@ import logo from '../assets/logoAlt-Photoroom.png';
 import bg from '../assets/bg.png';
 import { useNavigate } from 'react-router-dom';
 import Particles from '../components/Particles';
+import { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 function Starter() {
   const [hovered, setHovered] = useState(false);
+  const { currentUser, loading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && currentUser) {
+      navigate("/home");
+    }
+  }, [loading, currentUser]);
+
 
   const Login = () => {
     navigate('/login');
   };
+
+  if(loading) return null;
 
   return (
     <div className="starter-page">
