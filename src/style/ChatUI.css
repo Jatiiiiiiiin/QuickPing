@@ -1,5 +1,11 @@
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+
+body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #000;
   color: white;
@@ -11,6 +17,11 @@ body {
   width: 100vw;
   background-color: rgb(77, 77, 77);
 }
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 
 /* Sidebar */
 .sidebar {
@@ -131,6 +142,7 @@ body {
   background-color: #0f0f0f;
   border-radius: 20px;
   margin: 5px;
+  
 }
 
 .chat-header {
@@ -378,4 +390,135 @@ body {
   background-size: cover;
   background-position: center;
   border: 4px solid #4A47D1;
+}
+
+@media (max-width: 768px) {
+  .chat-container {
+    flex-direction: column;
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    height: 50px;
+    width: 98%;
+    background-color: #222;
+    border-bottom: 1px solid #333;
+    padding: 0 12px;
+  }
+
+  .menu-icons {
+    flex-direction: row;
+    gap: 12px;
+  }
+
+  .conversation-list {
+    width: 98%;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    padding-bottom: 10px;
+  }
+
+  .chat-window.mobile-active {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 60px; /* below sidebar */
+    left: 0;
+    width: 98%;
+    height: calc(100vh - 60px);
+    background-color: #111;
+    z-index: 99;
+  }
+
+  .back-button {
+    background: none;
+    color: #fff;
+    font-size: 16px;
+    padding: 12px;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-weight: bold;
+    border-bottom: 1px solid #333;
+  }
+
+  .chat-header,
+  .chat-input,
+  .chat-body {
+    padding: 8px 12px;
+  }
+
+  .new-convo {
+    width: 90%;
+    margin: 10px auto;
+    font-size: 14px;
+  }
+}
+
+.chat-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 12px;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for Chrome, Safari and Edge */
+.chat-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Hide scrollbar for Firefox */
+.chat-body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+@media (max-width: 768px) {
+  .chat-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .chat-body {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .chat-input {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-top: 1px solid #333;
+    background: #111;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    font-size: 16px; /* Prevent mobile zoom on input */
+  }
+
+  .chat-input input {
+    font-size: 16px; /* Prevent iOS zoom on input tap */
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #333;
+    background: #222;
+    color: white;
+  }
+
+  .send-btn {
+    background: #444;
+    border: none;
+    margin-left: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+  }
 }
