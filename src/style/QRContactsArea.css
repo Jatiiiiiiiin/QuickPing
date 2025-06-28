@@ -1,0 +1,26 @@
+.qr-contacts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  background-color: #fffdf5;
+  height: 100%;
+  border-radius: 30px;
+}
+
+.qr-box, .qr-scanner {
+  background: #f1f1f1;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.send-request {
+  background: #5e4ce6;
+  color: white;
+  padding: 10px 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+}

@@ -1,0 +1,93 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* Prevents scrolling */
+}
+
+.starter-page {
+  height: 100vh; /* Full viewport height */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent; /* So particle shows through */
+  text-align: center;
+  border-radius: 10px;
+  box-sizing: border-box;
+  padding: 20px 0;
+  position: relative;
+}
+
+.particles-container {
+  position: fixed;        /* so it sticks behind everything */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;             /* make sure your UI is above this */
+  pointer-events: auto;   /* must be 'auto' to receive mousemove */
+}
+
+.starter-page,
+.starter-container,
+.starter-footer {
+  position: relative;
+  z-index: 1;
+  background: transparent; /* ✅ Keep transparent */
+}
+
+.starter-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.starter-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.starter-page img {
+    height: 300px;
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    background-color:rgb(186, 186, 186);
+    color: black;
+    border: none;
+    padding: 20px 30px;
+    font-weight: bold;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 180px;
+    transition: background-color 0.3s ease, width .2s linear;
+}
+
+.btn-primary:hover {
+    background-color:rgb(255, 255, 255);
+    width: 200px;
+    transition:background-color 0.6s ease, width 0.6s ease, color 0.6s ease;
+}
+
+.starter-footer {
+    font-size: 14px;
+    color: #666;
+    background:none;
+}
+@keyframes float {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0); }
+}
+
+.starter-page img {
+    height: 300px;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+}
