@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { auth, googleProvider } from '../firebase';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import logo from '../assets/logoAlt-photoroom.png'
+import logo from '../assets/logoAlt-Photoroom.png'
 import Cubes from '../components/Cubes'
 import {
   signInWithEmailAndPassword,

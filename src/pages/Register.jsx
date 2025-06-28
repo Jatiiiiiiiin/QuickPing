@@ -4,7 +4,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import '../style/Login.css';
-import logo from '../assets/logoAlt-photoroom.png'; // make sure this path is correct
+import logo from '../assets/logoAlt-Photoroom.png'; // make sure this path is correct
 import Cubes from '../components/Cubes'; // assuming this is your animated background
 import { signInWithPopup } from 'firebase/auth';
 import { googleProvider } from '../firebase';
