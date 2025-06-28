@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import '../style/Starter.css';
-import logo from '../assets/logoAlt-photoroom.png';
+import logo from '../assets/logoAlt-Photoroom.png';
 import bg from '../assets/bg.png';
 import { useNavigate } from 'react-router-dom';
 import Particles from '../components/Particles';
