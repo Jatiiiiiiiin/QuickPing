@@ -71,7 +71,7 @@ function ProfileSetup() {
               onChange={handleImageChange}
             />
             <div
-              className="avatar"
+              className="setup-avatar"
               style={{ backgroundImage: `url("${avatar || defaultAvatar}")` }}
             ></div>
             <button

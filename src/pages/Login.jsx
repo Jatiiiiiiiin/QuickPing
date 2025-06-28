@@ -60,18 +60,9 @@ function Login() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      alert('Please enter your email first.');
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      alert('Password reset email sent.');
-    } catch (error) {
-      alert(error.message);
-    }
-  };
+  const register = ()=> {
+    navigate('/register')
+  }
 
   return (
     <>
@@ -148,8 +139,8 @@ function Login() {
                 </>
               )}
 
-              <a href="#" className="create-link" onClick={handleForgotPassword}>
-                Forgot Password →
+              <a href="#" className="create-link" onClick={register}>
+                New User →
               </a>
             </div>
           </div>

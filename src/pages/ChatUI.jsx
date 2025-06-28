@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './ChatUI.css';
+import '../style/ChatUI.css';
 import { Settings, MessageCircle, Users, FileText, Zap, Send } from 'react-feather';
 import { doc, getDoc, setDoc, updateDoc, deleteField, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
