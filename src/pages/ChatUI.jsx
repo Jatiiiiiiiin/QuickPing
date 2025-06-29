@@ -25,10 +25,20 @@ const ChatUI = () => {
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
   useEffect(() => {
-  if (chatBodyRef.current) {
-    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-  }
+  const el = chatBodyRef.current;
+  if (!el) return;
+
+  const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+
+  const timeout = setTimeout(() => {
+    if (nearBottom) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, 100);
+
+  return () => clearTimeout(timeout);
 }, [messages]);
+
 
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth <= 768);

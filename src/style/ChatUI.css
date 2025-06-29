@@ -446,7 +446,7 @@ body {
     position: fixed;
     top: 60px;
     left: 0;
-    width: 980%;
+    width: 98%;
     height: calc(100dvh - 60px);
     background-color: #111;
     z-index: 99;
