@@ -23,21 +23,23 @@ const ChatUI = () => {
   const [messages, setMessages] = useState([]);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const typingTimeout = useRef(null);
+  const [isFriendTyping, setIsFriendTyping] = useState(false);
 
   useEffect(() => {
-  const el = chatBodyRef.current;
-  if (!el) return;
+    const el = chatBodyRef.current;
+    if (!el) return;
 
-  const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
 
-  const timeout = setTimeout(() => {
-    if (nearBottom) {
-      el.scrollTop = el.scrollHeight;
-    }
-  }, 100);
+    const timeout = setTimeout(() => {
+      if (nearBottom) {
+        el.scrollTop = el.scrollHeight;
+      }
+    }, 100);
 
-  return () => clearTimeout(timeout);
-}, [messages]);
+    return () => clearTimeout(timeout);
+  }, [messages]);
 
 
   useEffect(() => {
@@ -95,6 +97,67 @@ const ChatUI = () => {
 
     return () => unsubscribeMessages();
   }, [currentUser, activeFriend]);
+
+  useEffect(() => {
+    if (!currentUser || !activeFriend) return;
+
+    const threadId = [currentUser.uid, activeFriend.uid].sort().join('_');
+    const typingRef = doc(db, 'threads', threadId + '_typing');
+
+    const unsubscribeTyping = onSnapshot(typingRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setIsFriendTyping(data[activeFriend.uid] === true);
+      } else {
+        setIsFriendTyping(false);
+      }
+    });
+
+    return () => unsubscribeTyping();
+  }, [currentUser, activeFriend]);
+
+
+
+
+
+  const HandleTyping = async () => {
+    if (!activeFriend || !currentUser) return;
+
+    const threadId = [currentUser.uid, activeFriend.uid].sort().join('_');
+    const typingRef = doc(db, 'threads', threadId + '_typing');
+
+    const now = Date.now();
+    if (!typingTimeout.current) typingTimeout.current = {};
+
+    typingTimeout.current.lastTyped = now;
+
+    try {
+      // ✅ Always set to true while user is typing
+      await setDoc(typingRef, {
+        [currentUser.uid]: true
+      }, { merge: true });
+
+      // ✅ Debounced "false" only if 3s have passed without more typing
+      setTimeout(() => {
+        const timeSinceLastTyped = Date.now() - typingTimeout.current.lastTyped;
+        if (timeSinceLastTyped >= 1000) {
+          setDoc(typingRef, {
+            [currentUser.uid]: false
+          }, { merge: true });
+        }
+      }, 1100);
+    } catch (err) {
+      console.error("Typing update failed", err);
+    }
+  };
+
+
+  useEffect(() => {
+    if (!isFriendTyping || !chatBodyRef.current) return;
+    const el = chatBodyRef.current;
+    el.scrollTop = el.scrollHeight;
+  }, [isFriendTyping]);
+
 
 
 
@@ -220,6 +283,16 @@ const ChatUI = () => {
     }
   };
 
+  useEffect(() => {
+    const el = chatBodyRef.current;
+    if (!el) return;
+
+    // Always scroll to bottom when new messages arrive
+    el.scrollTop = el.scrollHeight;
+  }, [messages, mobileChatOpen, activeFriend]);
+
+
+
 
 
   return (
@@ -281,9 +354,7 @@ const ChatUI = () => {
       {/* Chat Window */}
       {(!isMobileView || mobileChatOpen) && (
         <div className={`chat-window ${isMobileView ? 'mobile-active' : ''}`}
-        style={{
-          width: '98%',
-        }}
+
         >
           {isMobileView && (
             <button className="back-button" onClick={() => {
@@ -293,9 +364,10 @@ const ChatUI = () => {
             }}>←</button>
           )}
           <button className="back-button" onClick={() => {
-              setMobileChatOpen(false);
-              setIsNewConversation(false);
-            }}>←</button>
+            setMobileChatOpen(false);
+            setIsNewConversation(false);
+            setActiveFriend(null);
+          }}>←</button>
           {isNewConversation ? (
             <div className="friend-connect-ui">
 
@@ -392,20 +464,32 @@ const ChatUI = () => {
 
                   <div className="chat-body" ref={chatBodyRef}>
                     {messages.map(msg => (
+
                       <div
                         key={msg.id}
                         className={`message ${msg.sender === currentUser.uid ? 'user' : 'bot'}`}
+                        style={{
+                          maxWidth: '600px',
+                        }}
                       >
                         {msg.text}
                       </div>
                     ))}
+                    {isFriendTyping && (
+                      <div className="typing-indicator">
+                        {activeFriend?.name || 'Friend'} is typing...
+                      </div>
+                    )}
                   </div>
 
                   <div className="chat-input">
                     <input
                       placeholder="Send your message..."
                       value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        HandleTyping();
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && inputMessage.trim()) {
                           sendMessage(
