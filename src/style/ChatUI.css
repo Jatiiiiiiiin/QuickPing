@@ -430,10 +430,10 @@ body {
 
   .sidebar {
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: space-evenly; /* ← evenly distribute icons */
     align-items: center;
     height: 50px;
-    width: 98.5%;
+    width: 98%;  /* ensure it spans full width */
     background-color: #222;
     border-bottom: 1px solid #333;
     padding: 0 12px;
@@ -441,11 +441,23 @@ body {
 
   .menu-icons {
     flex-direction: row;
-    gap: 12px;
+    gap: 0;               /* remove gap so spacing is handled evenly */
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly; /* ← ensures even spacing */
+  }
+
+  .icon.settings {
+    margin-top: 30px;
+  }
+
+  .sidebar .icon {
+    flex: 1;
+    text-align: center;
   }
 
   .conversation-list {
-    width: 98.5%;
+    width: 98%;
     height: calc(100dvh - 60px);
     overflow-y: auto;
     padding-bottom: 10px;
