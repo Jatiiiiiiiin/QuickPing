@@ -203,21 +203,28 @@ body {
 }
 
 @media (max-width: 768px) {
-  .parent {
+
+  html,
+  body {
+    height: auto;
     min-height: 100vh;
-    /* ✅ allow content to grow */
-    background-color: black;
-    display: flex;
-    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .parent {
+    height: auto;
+    min-height: 100vh;
+    display: block; /* ✅ Switch from flex to block to allow stacking and scrolling */
   }
 
   .div1 {
-    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: black;
+    width: 100%;
     padding: 20px;
-  }
-
-  .div1 .logo img {
-    width: 200px;
   }
 
   .div1 .logo h1 {
@@ -226,8 +233,12 @@ body {
     text-align: center;
   }
 
+  .div1 .logo img {
+    width: 160px;
+  }
+
   .div-row {
-    flex-direction: column;
+    display: block; /* ✅ Change from flex to block for vertical stacking */
     height: auto;
   }
 
@@ -239,7 +250,7 @@ body {
 
   .div2 {
     order: 1;
-    padding: 60px;
+    padding: 60px 20px;
   }
 
   .div3 {
