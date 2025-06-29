@@ -280,19 +280,22 @@ const ChatUI = () => {
       )}
       {/* Chat Window */}
       {(!isMobileView || mobileChatOpen) && (
-        <div className={`chat-window ${isMobileView ? 'mobile-active' : ''}`}>
+        <div className={`chat-window ${isMobileView ? 'mobile-active' : ''}`}
+        style={{
+          width: '98%',
+        }}
+        >
           {isMobileView && (
             <button className="back-button" onClick={() => {
               setMobileChatOpen(false);
               setIsNewConversation(false);
               setActiveFriend(null);
-            }}>← Back</button>
+            }}>←</button>
           )}
-
-          {/* rest of chat window JSX inside here */}
-
-
-
+          <button className="back-button" onClick={() => {
+              setMobileChatOpen(false);
+              setIsNewConversation(false);
+            }}>←</button>
           {isNewConversation ? (
             <div className="friend-connect-ui">
 
