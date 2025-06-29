@@ -430,7 +430,7 @@ body {
     /* ← evenly distribute icons */
     align-items: center;
     height: 50px;
-    width: 97%;
+    width: 97.5%;
     /* ensure it spans full width */
     background-color: #222;
     border-bottom: 1px solid #333;
@@ -457,7 +457,7 @@ body {
   }
 
   .conversation-list {
-    width: 97%;
+    width: 97.5%;
     height: calc(100dvh - 60px);
     overflow-y: auto;
     padding-bottom: 10px;
@@ -467,7 +467,7 @@ body {
     position: fixed;
     top: 60px;
     left: 0;
-    width: 97%;
+    width: 97.5%;
     height: calc(100dvh - 60px);
     /* Full height minus header */
     z-index: 99;
