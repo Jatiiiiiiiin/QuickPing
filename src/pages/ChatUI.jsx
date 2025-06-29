@@ -356,13 +356,6 @@ const ChatUI = () => {
         <div className={`chat-window ${isMobileView ? 'mobile-active' : ''}`}
 
         >
-          {isMobileView && (
-            <button className="back-button" onClick={() => {
-              setMobileChatOpen(false);
-              setIsNewConversation(false);
-              setActiveFriend(null);
-            }}>←</button>
-          )}
           <button className="back-button" onClick={() => {
             setMobileChatOpen(false);
             setIsNewConversation(false);
