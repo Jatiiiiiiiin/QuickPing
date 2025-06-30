@@ -533,6 +533,11 @@ body {
   input, textarea {
     font-size: 16px;
   }
+
+  .chat-body.keyboard-open {
+  height: 50vh !important;
+  flex: none !important;
+}
 }
 
 
