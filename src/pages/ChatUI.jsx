@@ -299,14 +299,15 @@ const ChatUI = () => {
 
 
   useEffect(() => {
-    const input = document.querySelector('.chat-input input');
-    if (input) {
-      input.addEventListener('focus', () => {
-        setTimeout(() => {
-          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-      });
-    }
+    const updateHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+
+    return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
 
