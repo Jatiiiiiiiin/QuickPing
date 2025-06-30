@@ -27,9 +27,8 @@ const ChatUI = () => {
   const typingTimeout = useRef(null);
   const [isFriendTyping, setIsFriendTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  const windowHeightRef = useRef(window.innerHeight);
-  const inputRef = useRef(null);
+const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+const windowHeightRef = useRef(window.innerHeight);
 
 
 
@@ -294,294 +293,278 @@ const ChatUI = () => {
     }
   };
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.visualViewport) {
-        const viewportHeight = window.visualViewport.height;
-        const windowHeight = window.innerHeight;
-        const keyboardIsOpen = viewportHeight < windowHeight - 100; // keyboard likely open if height drops
+ useEffect(() => {
+  const handleResize = () => {
+    if (window.visualViewport) {
+      const viewportHeight = window.visualViewport.height;
+      const windowHeight = window.innerHeight;
+      const keyboardIsOpen = viewportHeight < windowHeight - 100; // keyboard likely open if height drops
 
-        setIsKeyboardOpen(keyboardIsOpen);
-      }
-    };
-
-    window.visualViewport?.addEventListener('resize', handleResize);
-    window.visualViewport?.addEventListener('scroll', handleResize); // necessary on some Android devices
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
-      window.visualViewport?.removeEventListener('scroll', handleResize);
-    };
-  }, []);
-
-
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-      const threshold = 150; // px height drop to assume keyboard
-      const isKbOpen = isMobile && window.innerHeight < screen.height - threshold;
-      setIsKeyboardOpen(isKbOpen);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (isKeyboardOpen && chatBodyRef.current) {
-      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+      setIsKeyboardOpen(keyboardIsOpen);
     }
-  }, [isKeyboardOpen]);
-
-  useEffect(() => {
-  const input = inputRef.current;
-  if (!input) return;
-
-  const handleFocus = () => {
-    setTimeout(() => {
-      input.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 300); // wait for keyboard animation
   };
 
-  input.addEventListener('focus', handleFocus);
-  return () => input.removeEventListener('focus', handleFocus);
+  window.visualViewport?.addEventListener('resize', handleResize);
+  window.visualViewport?.addEventListener('scroll', handleResize); // necessary on some Android devices
+
+  return () => {
+    window.visualViewport?.removeEventListener('resize', handleResize);
+    window.visualViewport?.removeEventListener('scroll', handleResize);
+  };
 }, []);
 
 
+useEffect(() => {
+  const handleResize = () => {
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const threshold = 150; // px height drop to assume keyboard
+    const isKbOpen = isMobile && window.innerHeight < screen.height - threshold;
+    setIsKeyboardOpen(isKbOpen);
+  };
+
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
+useEffect(() => {
+  if (isKeyboardOpen && chatBodyRef.current) {
+    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+  }
+}, [isKeyboardOpen]);
 
 
 
-  return (
-    <div className="chat-container">
-      <div className="sidebar">
-        <div className="icon settings" onClick={toggleSettings}><Settings size={20} /></div>
-        <div className="menu-icons">
-          <div className="icon"><MessageCircle size={20} /></div>
-          <div className="icon"><Users size={20} /></div>
-          <div className="icon"><FileText size={20} /></div>
+    return (
+      <div className="chat-container">
+        <div className="sidebar">
+          <div className="icon settings" onClick={toggleSettings}><Settings size={20} /></div>
+          <div className="menu-icons">
+            <div className="icon"><MessageCircle size={20} /></div>
+            <div className="icon"><Users size={20} /></div>
+            <div className="icon"><FileText size={20} /></div>
+          </div>
+          <div className="icon logo"><Zap size={20} /></div>
         </div>
-        <div className="icon logo"><Zap size={20} /></div>
-      </div>
 
-      {showSettings ? (
-        <Setting />
-      ) : (
-        <>
-          {/* Conversation List */}
-          {(!isMobileView || !mobileChatOpen) && (
-            <div className="conversation-list">
-              <div className="conversation-scroll">
-                <h2>All Conversations</h2>
-                {friends.length === 0 ? (
-                  <p>No conversations yet</p>
-                ) : (
-                  friends.map(friend => (
-                    <div
-                      key={friend.uid}
-                      className="conversation"
-                      onClick={() => {
-                        setActiveFriend(friend);
-                        if (isMobileView) setMobileChatOpen(true);
-                      }}
-                    >
+        {showSettings ? (
+          <Setting />
+        ) : (
+          <>
+            {/* Conversation List */}
+            {(!isMobileView || !mobileChatOpen) && (
+              <div className="conversation-list">
+                <div className="conversation-scroll">
+                  <h2>All Conversations</h2>
+                  {friends.length === 0 ? (
+                    <p>No conversations yet</p>
+                  ) : (
+                    friends.map(friend => (
                       <div
-                        className="avatar"
-                        style={{
-                          backgroundImage: `url(${friend.avatar || ''})`,
-                          backgroundColor: '#444',
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
+                        key={friend.uid}
+                        className="conversation"
+                        onClick={() => {
+                          setActiveFriend(friend);
+                          if (isMobileView) setMobileChatOpen(true);
                         }}
-                      />
-                      <div className="preview">
-                        <p className="title">{friend.name || 'Unnamed'}</p>
-                        <p className="msg">Click to chat</p>
-                      </div>
-                    </div>
-                  ))
-
-                )}
-
-              </div>
-              <button className="new-convo" onClick={() => {
-                setIsNewConversation(true);
-                if (isMobileView) setMobileChatOpen(true);
-              }}
-              >+ New Conversation</button>
-            </div>
-          )}
-          {/* Chat Window */}
-          {(!isMobileView || mobileChatOpen) && (
-            <div className={`chat-window ${isMobileView ? 'mobile-active' : ''} ${isKeyboardOpen ? 'keyboard-open' : ''}`}>
-
-              <button className="back-button" onClick={() => {
-                setMobileChatOpen(false);
-                setIsNewConversation(false);
-                setActiveFriend(null);
-              }}>←</button>
-              {isNewConversation ? (
-                <div className="friend-connect-ui">
-
-                  {/* Tabs */}
-                  <div className="connect-tabs">
-                    <button
-                      className={`connect-tab-btn ${activeTab === 'connect' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('connect')}
-                    >
-                      Connect Friend
-                    </button>
-                    <button
-                      className={`connect-tab-btn ${activeTab === 'qr' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('qr')}
-                    >
-                      Your QR
-                    </button>
-                  </div>
-
-                  <div className="request-section">
-                    {activeTab === 'connect' ? (
-                      <div className="connect-friend">
-                        <div className="qr-section">
-                          <p>Scan QR to connect</p>
-                          <QRScanner onScan={(uid) => setScannedUID(uid)} />
-                        </div>
-
-                        {scannedUID && (
-                          <div className="qr-confirm-box">
-                            <p>Send friend request to: <b>{scannedUID}</b>?</p>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                              <button className="accept-btn" onClick={() => {
-                                sendFriendRequest(scannedUID);
-                                setScannedUID(null);
-                              }}>Send Request</button>
-                              <button className="reject-btn" onClick={() => setScannedUID(null)}>Cancel</button>
-                            </div>
-                          </div>
-                        )}
-                        <div className="manual-uid">
-                          <input
-                            type="text"
-                            placeholder="Enter UID"
-                            value={manualUID}
-                            onChange={(e) => setManualUID(e.target.value)}
-                          />
-                          <button onClick={() => sendFriendRequest(manualUID)}>Send Request</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="your-qr">
-                        <YourQR />
-                      </div>
-                    )}
-
-                    <h4>Friend Requests</h4>
-                    {receivedRequests.length === 0 ? (
-                      <p>No friend requests</p>
-                    ) : (
-                      receivedRequests.map((uid) => (
-                        <div className="request-card" key={uid}>
-                          <div className="request-info">
-                            <span>{uid}</span>
-                            <div className="request-actions">
-                              <button className="accept-btn" onClick={() => handleAccept(uid)}>Accept</button>
-                              <button className="reject-btn" onClick={() => handleReject(uid)}>Reject</button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {activeFriend ? (
-                    <>
-                      <div className="chat-header">
+                      >
                         <div
-                          className="avatar large"
+                          className="avatar"
                           style={{
-                            backgroundImage: `url(${activeFriend.avatar || ''})`,
+                            backgroundImage: `url(${friend.avatar || ''})`,
                             backgroundColor: '#444',
                             backgroundSize: 'cover',
-                            backgroundPosition: 'center'
+                            backgroundPosition: 'center',
                           }}
                         />
-                        <div>
-                          <h3>{activeFriend.name || 'Unnamed'}</h3>
-                          <p>Friend</p>
+                        <div className="preview">
+                          <p className="title">{friend.name || 'Unnamed'}</p>
+                          <p className="msg">Click to chat</p>
                         </div>
                       </div>
+                    ))
 
+                  )}
 
-                      <div className={`chat-body ${isKeyboardOpen ? 'keyboard-open' : ''}`} ref={chatBodyRef}>
-                        {messages.map(msg => (
+                </div>
+                <button className="new-convo" onClick={() => {
+                  setIsNewConversation(true);
+                  if (isMobileView) setMobileChatOpen(true);
+                }}
+                >+ New Conversation</button>
+              </div>
+            )}
+            {/* Chat Window */}
+            {(!isMobileView || mobileChatOpen) && (
+              <div className={`chat-window ${isMobileView ? 'mobile-active' : ''} ${isKeyboardOpen ? 'keyboard-open' : ''}`}>
 
+                <button className="back-button" onClick={() => {
+                  setMobileChatOpen(false);
+                  setIsNewConversation(false);
+                  setActiveFriend(null);
+                }}>←</button>
+                {isNewConversation ? (
+                  <div className="friend-connect-ui">
+
+                    {/* Tabs */}
+                    <div className="connect-tabs">
+                      <button
+                        className={`connect-tab-btn ${activeTab === 'connect' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('connect')}
+                      >
+                        Connect Friend
+                      </button>
+                      <button
+                        className={`connect-tab-btn ${activeTab === 'qr' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('qr')}
+                      >
+                        Your QR
+                      </button>
+                    </div>
+
+                    <div className="request-section">
+                      {activeTab === 'connect' ? (
+                        <div className="connect-friend">
+                          <div className="qr-section">
+                            <p>Scan QR to connect</p>
+                            <QRScanner onScan={(uid) => setScannedUID(uid)} />
+                          </div>
+
+                          {scannedUID && (
+                            <div className="qr-confirm-box">
+                              <p>Send friend request to: <b>{scannedUID}</b>?</p>
+                              <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className="accept-btn" onClick={() => {
+                                  sendFriendRequest(scannedUID);
+                                  setScannedUID(null);
+                                }}>Send Request</button>
+                                <button className="reject-btn" onClick={() => setScannedUID(null)}>Cancel</button>
+                              </div>
+                            </div>
+                          )}
+                          <div className="manual-uid">
+                            <input
+                              type="text"
+                              placeholder="Enter UID"
+                              value={manualUID}
+                              onChange={(e) => setManualUID(e.target.value)}
+                            />
+                            <button onClick={() => sendFriendRequest(manualUID)}>Send Request</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="your-qr">
+                          <YourQR />
+                        </div>
+                      )}
+
+                      <h4>Friend Requests</h4>
+                      {receivedRequests.length === 0 ? (
+                        <p>No friend requests</p>
+                      ) : (
+                        receivedRequests.map((uid) => (
+                          <div className="request-card" key={uid}>
+                            <div className="request-info">
+                              <span>{uid}</span>
+                              <div className="request-actions">
+                                <button className="accept-btn" onClick={() => handleAccept(uid)}>Accept</button>
+                                <button className="reject-btn" onClick={() => handleReject(uid)}>Reject</button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {activeFriend ? (
+                      <>
+                        <div className="chat-header">
                           <div
-                            key={msg.id}
-                            className={`message ${msg.sender === currentUser.uid ? 'user' : 'bot'}`}
+                            className="avatar large"
                             style={{
-                              maxWidth: '600px',
+                              backgroundImage: `url(${activeFriend.avatar || ''})`,
+                              backgroundColor: '#444',
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
                             }}
-                          >
-                            {msg.text}
+                          />
+                          <div>
+                            <h3>{activeFriend.name || 'Unnamed'}</h3>
+                            <p>Friend</p>
                           </div>
-                        ))}
-                        {isFriendTyping && (
-                          <div className="typing-indicator">
-                            {activeFriend?.name || 'Friend'} is typing...
-                          </div>
-                        )}
-                      </div>
+                        </div>
 
-                      <div className="chat-input" ref={inputRef}>
-                        <input
-                          placeholder="Send your message..."
-                          value={inputMessage}
-                          onChange={(e) => {
-                            setInputMessage(e.target.value);
-                            HandleTyping();
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && inputMessage.trim()) {
+
+                        <div className={`chat-body ${isKeyboardOpen ? 'keyboard-open' : ''}`} ref={chatBodyRef}>
+                          {messages.map(msg => (
+
+                            <div
+                              key={msg.id}
+                              className={`message ${msg.sender === currentUser.uid ? 'user' : 'bot'}`}
+                              style={{
+                                maxWidth: '600px',
+                              }}
+                            >
+                              {msg.text}
+                            </div>
+                          ))}
+                          {isFriendTyping && (
+                            <div className="typing-indicator">
+                              {activeFriend?.name || 'Friend'} is typing...
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="chat-input">
+                          <input
+                            placeholder="Send your message..."
+                            value={inputMessage}
+                            onChange={(e) => {
+                              setInputMessage(e.target.value);
+                              HandleTyping();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && inputMessage.trim()) {
+                                sendMessage(
+                                  [currentUser.uid, activeFriend.uid].sort().join('_'),
+                                  inputMessage,
+                                  currentUser.uid
+                                );
+                              }
+                            }}
+                          />
+
+                          <button
+                            onClick={() =>
                               sendMessage(
                                 [currentUser.uid, activeFriend.uid].sort().join('_'),
                                 inputMessage,
                                 currentUser.uid
-                              );
+                              )
                             }
-                          }}
-                        />
+                            disabled={!inputMessage.trim()}
+                            className="send-btn"
+                          >
+                            <Send size={18} />
+                          </button>
 
-                        <button
-                          onClick={() =>
-                            sendMessage(
-                              [currentUser.uid, activeFriend.uid].sort().join('_'),
-                              inputMessage,
-                              currentUser.uid
-                            )
-                          }
-                          disabled={!inputMessage.trim()}
-                          className="send-btn"
-                        >
-                          <Send size={18} />
-                        </button>
-
+                        </div>
+                      </>
+                    ) : (
+                      <div className="empty-chat">
+                        <p>Select a friend to start chatting</p>
                       </div>
-                    </>
-                  ) : (
-                    <div className="empty-chat">
-                      <p>Select a friend to start chatting</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </>
-      )}
-    </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
-  );
-};
+    );
+  };
 
-export default ChatUI;
+  export default ChatUI;
