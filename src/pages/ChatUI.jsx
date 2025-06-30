@@ -313,6 +313,7 @@ const windowHeightRef = useRef(window.innerHeight);
   };
 }, []);
 
+
 useEffect(() => {
   const handleResize = () => {
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
@@ -324,7 +325,6 @@ useEffect(() => {
   window.addEventListener('resize', handleResize);
   return () => window.removeEventListener('resize', handleResize);
 }, []);
-
 
 
 

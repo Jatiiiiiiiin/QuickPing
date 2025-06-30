@@ -11,8 +11,6 @@ body {
   color: white;
 }
 
-
-
 .chat-container {
   display: flex;
   height: 100vh;
@@ -549,15 +547,6 @@ body {
   max-height: 50dvh;
   overflow: hidden;
   transition: height 0.25s ease;
-}
-body.keyboard-open {
-  height: 50dvh !important;
-  overflow: hidden;
-}
-
-.chat-container {
-  height: 100%;
-  transition: height 0.3s ease;
 }
 
 
