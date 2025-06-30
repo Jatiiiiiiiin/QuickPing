@@ -293,25 +293,26 @@ const windowHeightRef = useRef(window.innerHeight);
     }
   };
 
-  useEffect(() => {
+ useEffect(() => {
   const handleResize = () => {
-    const currentHeight = window.innerHeight;
-    const heightDiff = windowHeightRef.current - currentHeight;
+    if (window.visualViewport) {
+      const viewportHeight = window.visualViewport.height;
+      const windowHeight = window.innerHeight;
+      const keyboardIsOpen = viewportHeight < windowHeight - 100; // keyboard likely open if height drops
 
-    // If height drops significantly, assume keyboard is open
-    if (heightDiff > 150) {
-      setIsKeyboardOpen(true);
-    } else {
-      setIsKeyboardOpen(false);
+      setIsKeyboardOpen(keyboardIsOpen);
     }
   };
 
-  window.addEventListener('resize', handleResize);
+  window.visualViewport?.addEventListener('resize', handleResize);
+  window.visualViewport?.addEventListener('scroll', handleResize); // necessary on some Android devices
 
   return () => {
-    window.removeEventListener('resize', handleResize);
+    window.visualViewport?.removeEventListener('resize', handleResize);
+    window.visualViewport?.removeEventListener('scroll', handleResize);
   };
 }, []);
+
 
 
 
