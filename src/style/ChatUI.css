@@ -535,7 +535,7 @@ body {
   }
 
   .chat-body.keyboard-open {
-  height: 45vh !important;
+  height: 35vh !important;
   flex: none !important;
 }
 }
