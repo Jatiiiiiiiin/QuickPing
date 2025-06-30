@@ -8,6 +8,7 @@ import YourQR from '../components/YourQR';
 import QRScanner from '../components/QRScanner';
 import { addDoc, serverTimestamp } from "firebase/firestore";
 import { query, orderBy } from "firebase/firestore";
+import Setting from '../pages/Setting';
 
 const ChatUI = () => {
   const { currentUser } = useAuth();
@@ -25,6 +26,11 @@ const ChatUI = () => {
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const typingTimeout = useRef(null);
   const [isFriendTyping, setIsFriendTyping] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const toggleSettings = () => {
+    setShowSettings(prev => !prev)
+  };
 
   useEffect(() => {
     const el = chatBodyRef.current;
@@ -297,9 +303,8 @@ const ChatUI = () => {
 
   return (
     <div className="chat-container">
-      {/* Sidebar */}
       <div className="sidebar">
-        <div className="icon settings"><Settings size={20} /></div>
+        <div className="icon settings" onClick={toggleSettings}><Settings size={20} /></div>
         <div className="menu-icons">
           <div className="icon"><MessageCircle size={20} /></div>
           <div className="icon"><Users size={20} /></div>
@@ -308,7 +313,11 @@ const ChatUI = () => {
         <div className="icon logo"><Zap size={20} /></div>
       </div>
 
-      {/* Conversation List */}
+      {showSettings ? (
+        <Setting />
+      ) : (
+        <>
+        {/* Conversation List */ }
       {(!isMobileView || !mobileChatOpen) && (
         <div className="conversation-list">
           <div className="conversation-scroll">
@@ -515,10 +524,11 @@ const ChatUI = () => {
                   <p>Select a friend to start chatting</p>
                 </div>
               )}
-
             </>
           )}
         </div>
+      )}
+      </>
       )}
     </div>
 
