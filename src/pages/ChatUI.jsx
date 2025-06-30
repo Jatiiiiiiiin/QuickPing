@@ -316,6 +316,7 @@ const windowHeightRef = useRef(window.innerHeight);
 
 
 
+
     return (
       <div className="chat-container">
         <div className="sidebar">
