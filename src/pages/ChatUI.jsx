@@ -332,6 +332,18 @@ useEffect(() => {
   }
 }, [isKeyboardOpen]);
 
+useEffect(() => {
+  const input = inputRef.current;
+  const handleFocus = () => {
+    setTimeout(() => {
+      input.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 300); // wait for keyboard animation
+  };
+  input.addEventListener('focus', handleFocus);
+  return () => input.removeEventListener('focus', handleFocus);
+}, []);
+
+
 
 
     return (
@@ -516,7 +528,7 @@ useEffect(() => {
                           )}
                         </div>
 
-                        <div className="chat-input">
+                        <div className="chat-input" ref={inputRef}>
                           <input
                             placeholder="Send your message..."
                             value={inputMessage}
