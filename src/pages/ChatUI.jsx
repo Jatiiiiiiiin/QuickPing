@@ -325,18 +325,6 @@ useEffect(() => {
   return () => window.removeEventListener('resize', handleResize);
 }, []);
 
-useEffect(() => {
-  const handleResize = () => {
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const threshold = 150; // px height drop to assume keyboard open
-    const isKbOpen = isMobile && window.innerHeight < screen.height - threshold;
-
-    document.body.classList.toggle("keyboard-open", isKbOpen);
-  };
-
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
 
 
 
