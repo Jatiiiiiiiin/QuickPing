@@ -326,6 +326,12 @@ useEffect(() => {
   return () => window.removeEventListener('resize', handleResize);
 }, []);
 
+useEffect(() => {
+  if (isKeyboardOpen && chatBodyRef.current) {
+    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+  }
+}, [isKeyboardOpen]);
+
 
 
     return (
