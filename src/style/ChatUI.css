@@ -540,6 +540,16 @@ body {
   flex: none !important;
   max-height: 50dvh;
 }
+
+.chat-window.keyboard-open {
+  height: 50dvh !important; /* or adjust to 60dvh or 65dvh as per your comfort */
+  min-height: 0;
+  max-height: 50dvh;
+  overflow: hidden;
+  transition: height 0.25s ease;
+}
+
+
 }
 
 

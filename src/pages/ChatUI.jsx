@@ -313,7 +313,17 @@ const windowHeightRef = useRef(window.innerHeight);
   };
 }, []);
 
+useEffect(() => {
+  const handleResize = () => {
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const threshold = 150; // px height drop to assume keyboard
+    const isKbOpen = isMobile && window.innerHeight < screen.height - threshold;
+    setIsKeyboardOpen(isKbOpen);
+  };
 
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
 
 
 
@@ -378,9 +388,8 @@ const windowHeightRef = useRef(window.innerHeight);
             )}
             {/* Chat Window */}
             {(!isMobileView || mobileChatOpen) && (
-              <div className={`chat-window ${isMobileView ? 'mobile-active' : ''}`}
+              <div className={`chat-window ${isMobileView ? 'mobile-active' : ''} ${isKeyboardOpen ? 'keyboard-open' : ''}`}>
 
-              >
                 <button className="back-button" onClick={() => {
                   setMobileChatOpen(false);
                   setIsNewConversation(false);
