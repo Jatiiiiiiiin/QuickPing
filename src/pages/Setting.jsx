@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import '../style/Settings.css';
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { db } from '../firebase'
-import { getAuth } from 'firebase/auth'
-import { storage } from '../firebase';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
-
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { getAuth } from 'firebase/auth';
+import { uploadToCloudinary } from '../utils/uploadToCloudinary'; // ✅
 
 function Setting() {
   const [userData, setUserData] = useState(null);
@@ -15,7 +12,6 @@ function Setting() {
   const currentUser = auth.currentUser;
   const [activeTab, setActiveTab] = useState('edit-profile');
   const [isLoading, setIsLoading] = useState(false);
-
   const [location, setLocation] = useState('');
   const [bio, setBio] = useState('');
 
@@ -23,10 +19,8 @@ function Setting() {
     const file = e.target.files[0];
     if (!file || !currentUser) return;
 
-    const storageRef = ref(storage, `avatars/${currentUser.uid}/${file.name}`);
     try {
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      const downloadURL = await uploadToCloudinary(file);
 
       const userRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userRef, { avatar: downloadURL });
@@ -34,10 +28,9 @@ function Setting() {
       setUserData((prev) => ({ ...prev, avatar: downloadURL }));
     } catch (err) {
       console.error("Upload failed", err);
+      alert("Failed to upload image. Try again.");
     }
-
-  }
-
+  };
 
   const handleTabClick = (tab) => {
     if (tab === activeTab) return;
@@ -54,64 +47,46 @@ function Setting() {
         const userRef = doc(db, 'users', currentUser.uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
-          const data = userSnap.data(); // ✅ define it once
+          const data = userSnap.data();
           setUserData(data);
 
           const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
-          setName(fullName); // ✅ use it safely
+          setName(fullName);
+          setLocation(data.location || '');
+          setBio(data.bio || '');
         }
       }
     };
     getUserData();
   }, [currentUser]);
 
+  const handleSave = async () => {
+    if (!currentUser) return;
+
+    const userRef = doc(db, 'users', currentUser.uid);
+    try {
+      await updateDoc(userRef, {
+        location,
+        bio
+      });
+      alert('Profile updated successfully!');
+    } catch (err) {
+      console.error("Failed to update profile", err);
+      alert("Failed to update profile.");
+    }
+  };
 
   return (
     <div className="edit-profile-container">
       <aside className="pannel">
         <ul>
-          <li
-            className={activeTab === 'edit-profile' ? 'active' : ''}
-            onClick={() => handleTabClick('edit-profile')}
-          >
-            Edit profile
-          </li>
-          <li
-            className={activeTab === 'password' ? 'active' : ''}
-            onClick={() => handleTabClick('password')}
-          >
-            Password
-          </li>
-          <li
-            className={activeTab === 'notifications' ? 'active' : ''}
-            onClick={() => handleTabClick('notifications')}
-          >
-            Notifications
-          </li>
-          <li
-            className={activeTab === 'chat-export' ? 'active' : ''}
-            onClick={() => handleTabClick('chat-export')}
-          >
-            Chat export
-          </li>
-          <li
-            className={activeTab === 'sessions' ? 'active' : ''}
-            onClick={() => handleTabClick('sessions')}
-          >
-            Sessions
-          </li>
-          <li
-            className={activeTab === 'applications' ? 'active' : ''}
-            onClick={() => handleTabClick('applications')}
-          >
-            Applications
-          </li>
-          <li
-            className={activeTab === 'team' ? 'active' : ''}
-            onClick={() => handleTabClick('team')}
-          >
-            Team
-          </li>
+          <li className={activeTab === 'edit-profile' ? 'active' : ''} onClick={() => handleTabClick('edit-profile')}>Edit profile</li>
+          <li className={activeTab === 'password' ? 'active' : ''} onClick={() => handleTabClick('password')}>Password</li>
+          <li className={activeTab === 'notifications' ? 'active' : ''} onClick={() => handleTabClick('notifications')}>Notifications</li>
+          <li className={activeTab === 'chat-export' ? 'active' : ''} onClick={() => handleTabClick('chat-export')}>Chat export</li>
+          <li className={activeTab === 'sessions' ? 'active' : ''} onClick={() => handleTabClick('sessions')}>Sessions</li>
+          <li className={activeTab === 'applications' ? 'active' : ''} onClick={() => handleTabClick('applications')}>Applications</li>
+          <li className={activeTab === 'team' ? 'active' : ''} onClick={() => handleTabClick('team')}>Team</li>
         </ul>
         <button className="delete-btn">❌ Delete account</button>
       </aside>
@@ -131,7 +106,6 @@ function Setting() {
                     alt="avatar"
                     className="avatar"
                   />
-
 
                   <input
                     type="file"
@@ -154,14 +128,9 @@ function Setting() {
                   </div>
                 </div>
 
-
                 <div className="form-group">
                   <label>Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    disabled
-                  />
+                  <input type="text" value={name} disabled />
                 </div>
 
                 <div className="form-group">
@@ -184,7 +153,7 @@ function Setting() {
                   />
                 </div>
 
-                <button className="save-btn">Save changes</button>
+                <button className="save-btn" onClick={handleSave}>Save changes</button>
               </>
             )}
 
@@ -197,4 +166,5 @@ function Setting() {
     </div>
   );
 }
-export default Setting
+
+export default Setting;

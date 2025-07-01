@@ -543,13 +543,24 @@ body {
 }
 
 .chat-window.keyboard-open {
-  top: 60vh;
-  height: 50dvh !important; /* or adjust to 60dvh or 65dvh as per your comfort */
-  min-height: 0;
-  max-height: 50dvh;
+  position: fixed;
+  bottom: 0;
+  top: auto;
+  height: 50dvh !important;
   overflow: hidden;
-  transition: height 0.25s ease;
+  z-index: 999;
 }
+
+.chat-header {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.chat-window.keyboard-open .chat-header {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
 
 
 }

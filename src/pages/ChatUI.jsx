@@ -316,21 +316,14 @@ const windowHeightRef = useRef(window.innerHeight);
 
 useEffect(() => {
   const handleResize = () => {
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-    const threshold = 150; // px height drop to assume keyboard
-    const isKbOpen = isMobile && window.innerHeight < screen.height - threshold;
-    setIsKeyboardOpen(isKbOpen);
+    const heightDiff = window.innerHeight - window.visualViewport.height;
+    setIsKeyboardOpen(heightDiff > 150); // keyboard is likely open
   };
 
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
+  window.visualViewport?.addEventListener("resize", handleResize);
+  return () => window.visualViewport?.removeEventListener("resize", handleResize);
 }, []);
 
-useEffect(() => {
-  if (isKeyboardOpen && chatBodyRef.current) {
-    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-  }
-}, [isKeyboardOpen]);
 
 
 
