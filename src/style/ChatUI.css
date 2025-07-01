@@ -537,13 +537,13 @@ body {
   }
 
   .chat-body.keyboard-open {
-  height: 35vh !important;
   flex: none !important;
   max-height: 50dvh;
   padding-bottom: 80px;
 }
 
 .chat-window.keyboard-open {
+  top: 60vh;
   height: 50dvh !important; /* or adjust to 60dvh or 65dvh as per your comfort */
   min-height: 0;
   max-height: 50dvh;

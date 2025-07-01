@@ -1,13 +1,43 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../style/Settings.css';
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { db } from '../firebase'
+import { getAuth } from 'firebase/auth'
+import { storage } from '../firebase';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+
 
 function Setting() {
+  const [userData, setUserData] = useState(null);
+  const [name, setName] = useState('');
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
   const [activeTab, setActiveTab] = useState('edit-profile');
   const [isLoading, setIsLoading] = useState(false);
 
-  const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [bio, setBio] = useState('');
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !currentUser) return;
+
+    const storageRef = ref(storage, `avatars/${currentUser.uid}/${file.name}`);
+    try {
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, { avatar: downloadURL });
+
+      setUserData((prev) => ({ ...prev, avatar: downloadURL }));
+    } catch (err) {
+      console.error("Upload failed", err);
+    }
+
+  }
+
 
   const handleTabClick = (tab) => {
     if (tab === activeTab) return;
@@ -17,6 +47,24 @@ function Setting() {
       setIsLoading(false);
     }, 400); // simulate loading delay
   };
+
+  useEffect(() => {
+    const getUserData = async () => {
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data(); // ✅ define it once
+          setUserData(data);
+
+          const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+          setName(fullName); // ✅ use it safely
+        }
+      }
+    };
+    getUserData();
+  }, [currentUser]);
+
 
   return (
     <div className="edit-profile-container">
@@ -78,22 +126,41 @@ function Setting() {
                 <h2>Edit profile</h2>
 
                 <div className="avatar-section">
-                  <img src="https://via.placeholder.com/100" alt="avatar" className="avatar" />
+                  <img
+                    src={userData?.avatar || "https://ui-avatars.com/api/?name=User"}
+                    alt="avatar"
+                    className="avatar"
+                  />
+
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="avatarInput"
+                    style={{ display: 'none' }}
+                    onChange={handleImageUpload}
+                  />
+
                   <div>
-                    <button className="upload-btn">Upload new image</button>
+                    <button
+                      className="upload-btn"
+                      onClick={() => document.getElementById('avatarInput').click()}
+                    >
+                      Upload new image
+                    </button>
                     <p className="avatar-note">
-                      At least 800×800 px recommended. JPG or PNG and GIF is allowed
+                      At least 800×800 px recommended. JPG, PNG, or GIF allowed
                     </p>
                   </div>
                 </div>
+
 
                 <div className="form-group">
                   <label>Name</label>
                   <input
                     type="text"
-                    placeholder="Username or email"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    disabled
                   />
                 </div>
 
@@ -130,5 +197,4 @@ function Setting() {
     </div>
   );
 }
-
-export default Setting;
+export default Setting
