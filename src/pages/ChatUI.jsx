@@ -1,18 +1,21 @@
 import React, { useRef, useEffect, useState } from 'react';
 import '../style/ChatUI.css';
 import { Settings, MessageCircle, Users, FileText, Zap, Send } from 'react-feather';
-import { doc, getDoc, setDoc, updateDoc, deleteField, collection, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteField, collection, onSnapshot, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import YourQR from '../components/YourQR';
 import QRScanner from '../components/QRScanner';
-import { addDoc, serverTimestamp } from "firebase/firestore";
-import { query, orderBy } from "firebase/firestore";
 import Setting from '../pages/Setting';
 
 const ChatUI = () => {
   const { currentUser } = useAuth();
   const chatBodyRef = useRef(null);
+  const typingTimeout = useRef(null);
+  const windowHeightRef = useRef(window.innerHeight);
+  const [destructOn, setDestructOn] = useState(false);
+  const [destructTime, setDestructTime] = useState(5000); // default 5s
+  const [fadingMessageIds, setFadingMessageIds] = useState([]);
   const [isNewConversation, setIsNewConversation] = useState(false);
   const [activeTab, setActiveTab] = useState('connect');
   const [manualUID, setManualUID] = useState('');
@@ -24,17 +27,26 @@ const ChatUI = () => {
   const [messages, setMessages] = useState([]);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
-  const typingTimeout = useRef(null);
   const [isFriendTyping, setIsFriendTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-const windowHeightRef = useRef(window.innerHeight);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
+  const toggleSettings = () => setShowSettings(prev => !prev);
 
+  //destruction message
+  const sendDmessage = async () => {
+    if (!message.trim()) return;
 
-  const toggleSettings = () => {
-    setShowSettings(prev => !prev)
+    await addDoc(collection(db, 'threads', threadId, 'messages'), {
+      text: message,
+      senderId: currentUser.uid,
+      timestamp: Date.now(),
+      destroyAfter: destructOn ? destructTime : null
+    });
+
+    setMessage('');
   };
+
 
   useEffect(() => {
     const el = chatBodyRef.current;
@@ -51,19 +63,17 @@ const windowHeightRef = useRef(window.innerHeight);
     return () => clearTimeout(timeout);
   }, [messages]);
 
-
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Listen to friend requests
   useEffect(() => {
     if (!currentUser) return;
 
     const receivedRef = doc(db, 'users', currentUser.uid, 'friendRequests', 'received');
-    const unsubscribeReceived = onSnapshot(receivedRef, (docSnap) => {
+    const unsubscribe = onSnapshot(receivedRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const uids = Object.entries(data || {})
@@ -75,46 +85,64 @@ const windowHeightRef = useRef(window.innerHeight);
       }
     });
 
-    return () => unsubscribeReceived();
+    return () => unsubscribe();
   }, [currentUser]);
-
 
   useEffect(() => {
     if (!currentUser) return;
 
-    const friendsColRef = collection(db, 'users', currentUser.uid, 'friends');
-    const unsubscribeFriends = onSnapshot(friendsColRef, (snap) => {
+    const friendsRef = collection(db, 'users', currentUser.uid, 'friends');
+    const unsubscribe = onSnapshot(friendsRef, (snap) => {
       const list = [];
       snap.forEach((doc) => list.push(doc.data()));
-      setFriends(list); // updates conversation list
+      setFriends(list);
     });
 
-    return () => unsubscribeFriends();
+    return () => unsubscribe();
   }, [currentUser]);
-
 
   useEffect(() => {
     if (!currentUser || !activeFriend) return;
 
     const threadId = [currentUser.uid, activeFriend.uid].sort().join('_');
     const messagesRef = collection(db, 'threads', threadId, 'messages');
-    const q = query(messagesRef, orderBy('timestamp'));
+    const q = query(collection(db, 'threads', threadId, 'messages'), orderBy('timestamp'));
 
-    const unsubscribeMessages = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const now = Date.now();
+
+      const msgs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const destroyTime = data.destroyAfter;
+
+        // Schedule local auto-remove if destroyAfter is in the future
+        if (destroyTime && destroyTime > now) {
+          const timeout = destroyTime - now;
+          setTimeout(() => {
+            setFadingMessageIds(prev => [...prev, doc.id]);
+
+            setTimeout(() => {
+              setMessages(prev => prev.filter(m => m.id !== doc.id));
+              setFadingMessageIds(prev => prev.filter(id => id !== doc.id));
+            }, 400); // Wait for animation duration (adjust if needed)
+          }, timeout);
+        }
+
+        return { id: doc.id, ...data };
+      });
+
       setMessages(msgs);
     });
 
-    return () => unsubscribeMessages();
+    return () => unsubscribe();
   }, [currentUser, activeFriend]);
 
   useEffect(() => {
     if (!currentUser || !activeFriend) return;
 
-    const threadId = [currentUser.uid, activeFriend.uid].sort().join('_');
-    const typingRef = doc(db, 'threads', threadId + '_typing');
+    const typingRef = doc(db, 'threads', [currentUser.uid, activeFriend.uid].sort().join('_') + '_typing');
 
-    const unsubscribeTyping = onSnapshot(typingRef, (docSnap) => {
+    const unsubscribe = onSnapshot(typingRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setIsFriendTyping(data[activeFriend.uid] === true);
@@ -123,12 +151,8 @@ const windowHeightRef = useRef(window.innerHeight);
       }
     });
 
-    return () => unsubscribeTyping();
+    return () => unsubscribe();
   }, [currentUser, activeFriend]);
-
-
-
-
 
   const HandleTyping = async () => {
     if (!activeFriend || !currentUser) return;
@@ -142,18 +166,12 @@ const windowHeightRef = useRef(window.innerHeight);
     typingTimeout.current.lastTyped = now;
 
     try {
-      // ✅ Always set to true while user is typing
-      await setDoc(typingRef, {
-        [currentUser.uid]: true
-      }, { merge: true });
+      await setDoc(typingRef, { [currentUser.uid]: true }, { merge: true });
 
-      // ✅ Debounced "false" only if 3s have passed without more typing
       setTimeout(() => {
         const timeSinceLastTyped = Date.now() - typingTimeout.current.lastTyped;
         if (timeSinceLastTyped >= 1000) {
-          setDoc(typingRef, {
-            [currentUser.uid]: false
-          }, { merge: true });
+          setDoc(typingRef, { [currentUser.uid]: false }, { merge: true });
         }
       }, 1100);
     } catch (err) {
@@ -161,16 +179,10 @@ const windowHeightRef = useRef(window.innerHeight);
     }
   };
 
-
   useEffect(() => {
     if (!isFriendTyping || !chatBodyRef.current) return;
-    const el = chatBodyRef.current;
-    el.scrollTop = el.scrollHeight;
+    chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
   }, [isFriendTyping]);
-
-
-
-
 
   const sendFriendRequest = async (uid) => {
     if (!uid || uid === currentUser?.uid) {
@@ -179,20 +191,14 @@ const windowHeightRef = useRef(window.innerHeight);
     }
 
     try {
-      const userRef = doc(db, 'users', uid);
-      const userSnap = await getDoc(userRef);
+      const userSnap = await getDoc(doc(db, 'users', uid));
       if (!userSnap.exists()) {
         alert("User not found.");
         return;
       }
 
-      await setDoc(doc(db, 'users', currentUser.uid, 'friendRequests', 'sent'), {
-        [uid]: true
-      }, { merge: true });
-
-      await setDoc(doc(db, 'users', uid, 'friendRequests', 'received'), {
-        [currentUser.uid]: true
-      }, { merge: true });
+      await setDoc(doc(db, 'users', currentUser.uid, 'friendRequests', 'sent'), { [uid]: true }, { merge: true });
+      await setDoc(doc(db, 'users', uid, 'friendRequests', 'received'), { [currentUser.uid]: true }, { merge: true });
 
       alert("Friend request sent!");
       setManualUID('');
@@ -210,15 +216,11 @@ const windowHeightRef = useRef(window.innerHeight);
       const currentSnap = await getDoc(doc(db, 'users', currentUser.uid));
       const currentData = currentSnap.exists() ? currentSnap.data() : {};
 
-      const friendName = `${friendData.firstName || ''} ${friendData.lastName || ''}`.trim()
-        || friendData.displayName || 'Unnamed';
+      const friendName = `${friendData.firstName || ''} ${friendData.lastName || ''}`.trim() || friendData.displayName || 'Unnamed';
       const friendAvatar = friendData.avatar || friendData.photoURL || '';
-
-      const myName = `${currentData.firstName || ''} ${currentData.lastName || ''}`.trim()
-        || currentUser.displayName || 'Unnamed';
+      const myName = `${currentData.firstName || ''} ${currentData.lastName || ''}`.trim() || currentUser.displayName || 'Unnamed';
       const myAvatar = currentData.avatar || currentUser.photoURL || '';
 
-      // ✅ Remove request
       await updateDoc(doc(db, 'users', currentUser.uid, 'friendRequests', 'received'), {
         [uid]: deleteField()
       });
@@ -226,44 +228,23 @@ const windowHeightRef = useRef(window.innerHeight);
         [currentUser.uid]: deleteField()
       });
 
-      // ✅ Save each other as friends with fallback name/avatar
       await setDoc(doc(db, 'users', currentUser.uid, 'friends', uid), {
-        uid,
-        name: friendName,
-        avatar: friendAvatar,
-        createdAt: new Date()
-      });
-
-      console.log("Writing sender friend doc:", {
-        uid: currentUser.uid,
-        name: myName,
-        avatar: myAvatar
+        uid, name: friendName, avatar: friendAvatar, createdAt: new Date()
       });
 
       await setDoc(doc(db, 'users', uid, 'friends', currentUser.uid), {
-        uid: currentUser.uid,
-        name: myName,
-        avatar: myAvatar,
-        createdAt: new Date()
+        uid: currentUser.uid, name: myName, avatar: myAvatar, createdAt: new Date()
       });
 
-      console.log("Sender friend doc written ✅");
-
-      // ✅ Create chat thread
-      const threadId = [currentUser.uid, uid].sort().join('_');
-      await setDoc(doc(db, 'threads', threadId), {
-        participants: [currentUser.uid, uid],
-        createdAt: new Date()
+      await setDoc(doc(db, 'threads', [currentUser.uid, uid].sort().join('_')), {
+        participants: [currentUser.uid, uid], createdAt: new Date()
       });
     } catch (err) {
       console.error("Accept error:", err);
     }
   };
 
-
-
-
-  const handleReject = async (uid) => {
+  /*const handleReject = async (uid) => {
     try {
       await updateDoc(doc(db, 'users', currentUser.uid, 'friendRequests', 'received'), {
         [uid]: deleteField()
@@ -274,290 +255,370 @@ const windowHeightRef = useRef(window.innerHeight);
     } catch (err) {
       console.error("Reject error:", err);
     }
-  };
+  };*/
 
   const sendMessage = async (threadId, text, senderUid) => {
     if (!text.trim()) return;
 
     try {
-      const messageRef = collection(db, "threads", threadId, "messages");
-      await addDoc(messageRef, {
+      const messageData = {
         text,
         sender: senderUid,
         timestamp: serverTimestamp(),
-      });
+      };
 
-      setInputMessage(''); // clear input
+      // Add destruct flag and timer if enabled
+      if (destructOn) {
+        messageData.destroyAfter = Date.now() + destructTime;
+      }
+
+      await addDoc(collection(db, "threads", threadId, "messages"), messageData);
+      setInputMessage('');
     } catch (err) {
       console.error("Error sending message:", err);
     }
   };
 
- useEffect(() => {
-  const handleResize = () => {
-    if (window.visualViewport) {
-      const viewportHeight = window.visualViewport.height;
-      const windowHeight = window.innerHeight;
-      const keyboardIsOpen = viewportHeight < windowHeight - 100; // keyboard likely open if height drops
 
-      setIsKeyboardOpen(keyboardIsOpen);
-    }
-  };
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.visualViewport) {
+        const heightDiff = window.innerHeight - window.visualViewport.height;
+        setIsKeyboardOpen(heightDiff > 150);
+      }
+    };
 
-  window.visualViewport?.addEventListener('resize', handleResize);
-  window.visualViewport?.addEventListener('scroll', handleResize); // necessary on some Android devices
+    window.visualViewport?.addEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('scroll', handleResize);
 
-  return () => {
-    window.visualViewport?.removeEventListener('resize', handleResize);
-    window.visualViewport?.removeEventListener('scroll', handleResize);
-  };
-}, []);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
+  }, []);
 
+  useEffect(() => {
+    if (!chatBodyRef.current) return;
 
-useEffect(() => {
-  const handleResize = () => {
-    const heightDiff = window.innerHeight - window.visualViewport.height;
-    setIsKeyboardOpen(heightDiff > 150); // keyboard is likely open
-  };
+    // Wait a tick for the DOM to fully render the new messages
+    const timeout = setTimeout(() => {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }, 100); // small delay helps after chat switch
 
-  window.visualViewport?.addEventListener("resize", handleResize);
-  return () => window.visualViewport?.removeEventListener("resize", handleResize);
-}, []);
+    return () => clearTimeout(timeout);
+  }, [messages, activeFriend]);
 
 
 
 
-    return (
-      <div className="chat-container">
-        <div className="sidebar">
-          <div className="icon settings" onClick={toggleSettings}><Settings size={20} /></div>
-          <div className="menu-icons">
-            <div className="icon"><MessageCircle size={20} /></div>
-            <div className="icon"><Users size={20} /></div>
-            <div className="icon"><FileText size={20} /></div>
-          </div>
-          <div className="icon logo"><Zap size={20} /></div>
+  return (
+    <div className="chat-container">
+      <div className="sidebar">
+        <div className="icon settings" onClick={toggleSettings}><Settings size={20} /></div>
+        <div className="menu-icons">
+          <div className="icon"><MessageCircle size={20} /></div>
+          <div className="icon"><Users size={20} /></div>
+          <div className="icon"><FileText size={20} /></div>
         </div>
+        <div className="icon logo"><Zap size={20} /></div>
+      </div>
 
-        {showSettings ? (
-          <Setting />
-        ) : (
-          <>
-            {/* Conversation List */}
-            {(!isMobileView || !mobileChatOpen) && (
-              <div className="conversation-list">
-                <div className="conversation-scroll">
-                  <h2>All Conversations</h2>
-                  {friends.length === 0 ? (
-                    <p>No conversations yet</p>
-                  ) : (
-                    friends.map(friend => (
+      {showSettings ? (
+        <Setting />
+      ) : (
+        <>
+          {/* Conversation List */}
+          {(!isMobileView || !mobileChatOpen) && (
+            <div className="conversation-list">
+              <div className="conversation-scroll">
+                <h2>All Conversations</h2>
+                {friends.length === 0 ? (
+                  <p>No conversations yet</p>
+                ) : (
+                  friends.map(friend => (
+                    <div
+                      key={friend.uid}
+                      className="conversation"
+                      onClick={() => {
+                        setActiveFriend(friend);
+                        if (isMobileView) setMobileChatOpen(true);
+                      }}
+                    >
                       <div
-                        key={friend.uid}
-                        className="conversation"
-                        onClick={() => {
-                          setActiveFriend(friend);
-                          if (isMobileView) setMobileChatOpen(true);
+                        className="avatar"
+                        style={{
+                          backgroundImage: `url(${friend.avatar || ''})`,
+                          backgroundColor: '#444',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
                         }}
-                      >
-                        <div
-                          className="avatar"
-                          style={{
-                            backgroundImage: `url(${friend.avatar || ''})`,
-                            backgroundColor: '#444',
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                          }}
-                        />
-                        <div className="preview">
-                          <p className="title">{friend.name || 'Unnamed'}</p>
-                          <p className="msg">Click to chat</p>
-                        </div>
+                      />
+                      <div className="preview">
+                        <p className="title">{friend.name || 'Unnamed'}</p>
+                        <p className="msg">Click to chat</p>
                       </div>
-                    ))
+                    </div>
+                  ))
 
-                  )}
+                )}
 
-                </div>
-                <button className="new-convo" onClick={() => {
-                  setIsNewConversation(true);
-                  if (isMobileView) setMobileChatOpen(true);
-                }}
-                >+ New Conversation</button>
               </div>
-            )}
-            {/* Chat Window */}
-            {(!isMobileView || mobileChatOpen) && (
-              <div className={`chat-window ${isMobileView ? 'mobile-active' : ''} ${isKeyboardOpen ? 'keyboard-open' : ''}`}>
+              <button className="new-convo" onClick={() => {
+                setIsNewConversation(true);
+                if (isMobileView) setMobileChatOpen(true);
+              }}>
+                + New conversation
+                <div class="icon">
+                  <svg
+                    height="24"
+                    width="24"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M0 0h24v24H0z" fill="none"></path>
+                    <path
+                      d="M16.172 11l-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z"
+                      fill="currentColor"
+                    ></path>
+                  </svg>
+                </div>
+              </button>
 
-                <button className="back-button" onClick={() => {
+            </div>
+          )}
+          {/* Chat Window */}
+          {(!isMobileView || mobileChatOpen) && (
+            <div className={`chat-window ${isMobileView ? 'mobile-active' : ''} ${isKeyboardOpen ? 'keyboard-open' : ''}`}>
+
+              <div class="styled-wrapper">
+                <button className="button" onClick={() => {
                   setMobileChatOpen(false);
                   setIsNewConversation(false);
                   setActiveFriend(null);
-                }}>←</button>
-                {isNewConversation ? (
-                  <div className="friend-connect-ui">
-
-                    {/* Tabs */}
-                    <div className="connect-tabs">
-                      <button
-                        className={`connect-tab-btn ${activeTab === 'connect' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('connect')}
+                }}>
+                  <div class="button-box">
+                    <span class="button-elem">
+                      <svg
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arrow-icon"
                       >
-                        Connect Friend
-                      </button>
-                      <button
-                        className={`connect-tab-btn ${activeTab === 'qr' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('qr')}
+                        <path
+                          fill="white"
+                          d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+                        ></path>
+                      </svg>
+                    </span>
+                    <span class="button-elem">
+                      <svg
+                        fill="white"
+                        viewBox="0 0  24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="arrow-icon"
                       >
-                        Your QR
-                      </button>
-                    </div>
-
-                    <div className="request-section">
-                      {activeTab === 'connect' ? (
-                        <div className="connect-friend">
-                          <div className="qr-section">
-                            <p>Scan QR to connect</p>
-                            <QRScanner onScan={(uid) => setScannedUID(uid)} />
-                          </div>
-
-                          {scannedUID && (
-                            <div className="qr-confirm-box">
-                              <p>Send friend request to: <b>{scannedUID}</b>?</p>
-                              <div style={{ display: 'flex', gap: '10px' }}>
-                                <button className="accept-btn" onClick={() => {
-                                  sendFriendRequest(scannedUID);
-                                  setScannedUID(null);
-                                }}>Send Request</button>
-                                <button className="reject-btn" onClick={() => setScannedUID(null)}>Cancel</button>
-                              </div>
-                            </div>
-                          )}
-                          <div className="manual-uid">
-                            <input
-                              type="text"
-                              placeholder="Enter UID"
-                              value={manualUID}
-                              onChange={(e) => setManualUID(e.target.value)}
-                            />
-                            <button onClick={() => sendFriendRequest(manualUID)}>Send Request</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="your-qr">
-                          <YourQR />
-                        </div>
-                      )}
-
-                      <h4>Friend Requests</h4>
-                      {receivedRequests.length === 0 ? (
-                        <p>No friend requests</p>
-                      ) : (
-                        receivedRequests.map((uid) => (
-                          <div className="request-card" key={uid}>
-                            <div className="request-info">
-                              <span>{uid}</span>
-                              <div className="request-actions">
-                                <button className="accept-btn" onClick={() => handleAccept(uid)}>Accept</button>
-                                <button className="reject-btn" onClick={() => handleReject(uid)}>Reject</button>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                        <path
+                          d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+                        ></path>
+                      </svg>
+                    </span>
                   </div>
-                ) : (
-                  <>
-                    {activeFriend ? (
-                      <>
-                        <div className="chat-header">
-                          <div
-                            className="avatar large"
-                            style={{
-                              backgroundImage: `url(${activeFriend.avatar || ''})`,
-                              backgroundColor: '#444',
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center'
-                            }}
+                </button>
+              </div>
+
+              {isNewConversation ? (
+                <div className="friend-connect-ui">
+
+                  {/* Tabs */}
+                  <div className="connect-tabs">
+                    <button
+                      className={`connect-tab-btn ${activeTab === 'connect' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('connect')}
+                    >
+                      Connect Friend
+                    </button>
+                    <button
+                      className={`connect-tab-btn ${activeTab === 'qr' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('qr')}
+                    >
+                      Your QR
+                    </button>
+                  </div>
+
+                  <div className="request-section">
+                    {activeTab === 'connect' ? (
+                      <div className="connect-friend">
+                        <div className="qr-section">
+                          <p>Scan QR to connect</p>
+                          <QRScanner onScan={(uid) => setScannedUID(uid)} />
+                        </div>
+
+                        {scannedUID && (
+                          <div className="qr-confirm-box">
+                            <p>Send friend request to: <b>{scannedUID}</b>?</p>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <button className="accept-btn" onClick={() => {
+                                sendFriendRequest(scannedUID);
+                                setScannedUID(null);
+                              }}>Send Request</button>
+                              <button className="reject-btn" onClick={() => setScannedUID(null)}>Cancel</button>
+                            </div>
+                          </div>
+                        )}
+                        <div className="manual-uid">
+                          <input
+                            type="text"
+                            placeholder="Enter UID"
+                            value={manualUID}
+                            onChange={(e) => setManualUID(e.target.value)}
                           />
-                          <div>
-                            <h3>{activeFriend.name || 'Unnamed'}</h3>
-                            <p>Friend</p>
+                          <button onClick={() => sendFriendRequest(manualUID)}>Send Request</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="your-qr">
+                        <YourQR />
+                      </div>
+                    )}
+
+                    <h4>Friend Requests</h4>
+                    {receivedRequests.length === 0 ? (
+                      <p>No friend requests</p>
+                    ) : (
+                      receivedRequests.map((uid) => (
+                        <div className="request-card" key={uid}>
+                          <div className="request-info">
+                            <span>{uid}</span>
+                            <div className="accept-btn" onClick={() => handleAccept(uid)}>
+                              <div tabindex="0" class="plusButton">
+                                <svg class="plusIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+                                  <g mask="url(#mask0_21_345)">
+                                    <path d="M13.75 23.75V16.25H6.25V13.75H13.75V6.25H16.25V13.75H23.75V16.25H16.25V23.75H13.75Z"></path>
+                                  </g>
+                                </svg>
+                              </div>
+                            </div>
                           </div>
                         </div>
-
-
-                        <div className={`chat-body ${isKeyboardOpen ? 'keyboard-open' : ''}`} ref={chatBodyRef}>
-                          {messages.map(msg => (
-
-                            <div
-                              key={msg.id}
-                              className={`message ${msg.sender === currentUser.uid ? 'user' : 'bot'}`}
-                              style={{
-                                maxWidth: '600px',
-                              }}
-                            >
-                              {msg.text}
-                            </div>
-                          ))}
-                          {isFriendTyping && (
-                            <div className="typing-indicator">
-                              {activeFriend?.name || 'Friend'} is typing...
-                            </div>
-                          )}
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {activeFriend ? (
+                    <>
+                      <div className="chat-header">
+                        <div
+                          className="avatar large"
+                          style={{
+                            backgroundImage: `url(${activeFriend.avatar || ''})`,
+                            backgroundColor: '#444',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                        />
+                        <div>
+                          <h3>{activeFriend.name || 'Unnamed'}</h3>
+                          <p>Friend</p>
                         </div>
+                      </div>
 
-                        <div className="chat-input">
-                          <input
-                            placeholder="Send your message..."
-                            value={inputMessage}
-                            onChange={(e) => {
-                              setInputMessage(e.target.value);
-                              HandleTyping();
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && inputMessage.trim()) {
-                                sendMessage(
-                                  [currentUser.uid, activeFriend.uid].sort().join('_'),
-                                  inputMessage,
-                                  currentUser.uid
-                                );
-                              }
-                            }}
-                          />
 
-                          <button
-                            onClick={() =>
+                      <div className={`chat-body ${isKeyboardOpen ? 'keyboard-open' : ''}`} ref={chatBodyRef}>
+                        {messages.map(msg => (
+
+                          <div
+                            key={msg.id}
+                            className={`message ${msg.sender === currentUser.uid ? 'user' : 'bot'} ${fadingMessageIds.includes(msg.id) ? 'burst' : ''}`}
+                            style={{
+                              maxWidth: '600px',
+                            }}
+                          >
+                            {msg.text}
+                          </div>
+
+                        ))}
+                        {isFriendTyping && (
+                          <div className="typing-indicator">
+                            {activeFriend?.name || 'Friend'} is typing...
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="chat-input">
+                        {/* 💣 Toggle Button */}
+                        <button
+                          className={`destruct-toggle ${destructOn ? 'active' : ''}`}
+                          onClick={() => setDestructOn(prev => !prev)}
+                          title="Toggle self-destruct"
+                        >
+                          💣
+                        </button>
+
+                        {/* Optional Destruct Timer */}
+                        {destructOn && (
+                          <select
+                            value={destructTime}
+                            onChange={(e) => setDestructTime(Number(e.target.value))}
+                            className="destruct-timer"
+                          >
+                            <option value={3000}>3s</option>
+                            <option value={5000}>5s</option>
+                            <option value={10000}>10s</option>
+                            <option value={30000}>30s</option>
+                          </select>
+                        )}
+
+                        {/* Message Input */}
+                        <input
+                          placeholder="Send your message..."
+                          value={inputMessage}
+                          onChange={(e) => {
+                            setInputMessage(e.target.value);
+                            HandleTyping();
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && inputMessage.trim()) {
                               sendMessage(
                                 [currentUser.uid, activeFriend.uid].sort().join('_'),
                                 inputMessage,
                                 currentUser.uid
-                              )
+                              );
                             }
-                            disabled={!inputMessage.trim()}
-                            className="send-btn"
-                          >
-                            <Send size={18} />
-                          </button>
+                          }}
+                        />
 
-                        </div>
-                      </>
-                    ) : (
-                      <div className="empty-chat">
-                        <p>Select a friend to start chatting</p>
+                        {/* Send Button */}
+                        <button
+                          onClick={() =>
+                            sendMessage(
+                              [currentUser.uid, activeFriend.uid].sort().join('_'),
+                              inputMessage,
+                              currentUser.uid
+                            )
+                          }
+                          disabled={!inputMessage.trim()}
+                          className="send-btn"
+                        >
+                          <Send size={18} />
+                        </button>
                       </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
 
-    );
-  };
+                    </>
+                  ) : (
+                    <div className="empty-chat">
+                      <p>Select a friend to start chatting</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
 
-  export default ChatUI;
+  );
+};
+
+export default ChatUI;
