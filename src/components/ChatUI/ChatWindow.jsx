@@ -41,14 +41,14 @@ const ChatWindow = ({
 
   const [animateBody, setAnimateBody] = useState(false);
 
-useEffect(() => {
-  if (activeFriend || activeGroup) {
-    setAnimateBody(false); // Reset
-    requestAnimationFrame(() => {
-      setAnimateBody(true); // Trigger
-    });
-  }
-}, [activeFriend, activeGroup]);
+  useEffect(() => {
+    if (activeFriend || activeGroup) {
+      setAnimateBody(false); // Reset
+      requestAnimationFrame(() => {
+        setAnimateBody(true); // Trigger
+      });
+    }
+  }, [activeFriend, activeGroup]);
 
 
   return (
@@ -109,6 +109,11 @@ useEffect(() => {
                 </div>
               );
             })}
+            {isFriendTyping && !activeGroup && (
+              <div className="typing-indicator">
+                {activeFriend?.name || 'Friend'} is typing...
+              </div>
+            )}
           </div>
 
           <div className="chat-input">
@@ -142,7 +147,7 @@ useEffect(() => {
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && inputMessage.trim()) {
-                  sendMessage(threadId, inputMessage, currentUser.uid, !!activeGroup); 
+                  sendMessage(threadId, inputMessage, currentUser.uid, !!activeGroup);
                 }
               }}
             />

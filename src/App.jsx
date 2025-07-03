@@ -7,7 +7,6 @@ import ProfileSetup from './pages/ProfileSetup.jsx';
 import Starter from './pages/Starter.jsx';
 import ChatUI from './pages/ChatUI.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
-import { Settings } from 'react-feather';
 
 
 

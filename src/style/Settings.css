@@ -1,13 +1,17 @@
 .edit-profile-container {
-    display: flex;
-    height: 98.5%;
+    display: flex;     /* Make inner layout vertical */
+    flex-grow: 1;                 /* Allow it to grow inside a flex parent */
+    min-height: 0;                /* Allow it to shrink when keyboard opens */
     font-family: 'Segoe UI', sans-serif;
     background-color: #595959;
     color: #ffffff;
-    width: 99%;
     margin: 5px;
-    border-radius: 10%;
+    padding: 16px;
+    border-radius: 12px;          /* Use fixed px radius for consistency */
+    box-sizing: border-box;
+    overflow: auto;               /* Enable scrolling if content overflows */
 }
+
 
 .pannel {
     width: 240px;
@@ -178,7 +182,7 @@
   text-align: center;
 }
 
-  .profile-form {
+.profile-form {
   padding: 20px;
   width: 98.5%;
   overflow-y: auto;
@@ -186,10 +190,12 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px; /* spacing between form elements */
-  height: calc(100vh - 120px); /* adjust based on header + nav height */
-  background-color: #121212; /* optional: consistent bg for mobile */
+  gap: 16px;
+  flex-grow: 1;             /* allow it to fill available space */
+  min-height: 0;            /* allow shrinking inside flex */
+  background-color: #121212;
 }
+
 
 .profile-form input,
 .profile-form select,
@@ -215,9 +221,6 @@
     display: none;
   }
 
-  button{
-    margin-bottom: 100px;
-  }
 
 }
 /* From Uiverse.io by Peary74 */ 

@@ -235,10 +235,14 @@ body {
   background-color: #0f0f0f;
   border-radius: 20px;
   margin: 5px;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
   opacity: 0;
   transform: scale(0.5) translateY(50%);
   animation: slideFromCenter 0.3s ease-out forwards;
 }
+
 @keyframes slideFromCenter {
   0% {
     opacity: 0;
@@ -357,10 +361,13 @@ body {
   flex-direction: column;
   padding: 1.5rem;
   height: 100%;
+  min-height: 0;              /* 🔧 Allow it to shrink properly in a flex context */
+  overflow: auto;             /* 🔧 Prevent content cut-off, enable scrolling */
   background-color: #0f0f0f;
   color: white;
   box-sizing: border-box;
 }
+
 
 .connect-header {
   display: flex;
@@ -714,33 +721,45 @@ body {
   }
 
   .chat-input {
-    position: sticky;
-    bottom: 0;
-    background: #111;
-    z-index: 10;
-    padding: 10px;
-  }
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #111;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  border-top: 1px solid #222;
+}
 
-  .chat-input input {
-    position: sticky;
-    flex-grow: 1;
-    font-size: 16px;
-    padding: 10px 14px;
-    background: #222;
-    border: 1px solid #333;
-    border-radius: 20px;
-    color: white;
-  }
 
-  .send-btn {
-    margin-left: 8px;
-    padding: 10px;
-    border-radius: 50%;
-    background-color: #444;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
+.chat-input input {
+  flex-grow: 1;
+  font-size: 16px;
+  padding: 10px 14px;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 20px;
+  color: white;
+  border: none;
+  outline: none;
+}
+
+.send-btn {
+  margin-left: 8px;
+  padding: 10px;
+  border-radius: 50%;
+  background-color: #444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
   .send-btn:hover {
     background-color: black;
