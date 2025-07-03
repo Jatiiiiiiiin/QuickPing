@@ -28,7 +28,7 @@ const FriendConnectUI = ({
 
   return (
     <div className="friend-connect-ui">
-      /* 🔒 Always visible tab buttons */
+      
       <div className="connect-tabs">
         <button
           className={`connect-tab-btn ${activeTab === 'connect' ? 'active' : ''}`}
