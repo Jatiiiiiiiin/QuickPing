@@ -127,18 +127,6 @@
     min-height: 100px;
 }
 
-.save-btn {
-    background-color: #ffffff;
-    color: rgb(0, 0, 0);
-    padding: 12px 30px;
-    border: none;
-    font-weight: bold;
-    font-size: 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 20px;
-}
-
 .save-btn:hover {
     background-color: #005ae0;
 }
@@ -147,6 +135,9 @@
 @media (max-width: 768px) {
   .edit-profile-container {
     flex-direction: column;
+  }
+  .delete-btn{
+    margin: 0;
   }
 
   .pannel {
@@ -188,29 +179,46 @@
 }
 
   .profile-form {
-    padding: 20px;
-    width: 98.5%;
-    overflow-y: auto;
-    border-radius: 0 0 20px 20px;
-  }
+  padding: 20px;
+  width: 98.5%;
+  overflow-y: auto;
+  border-radius: 0 0 20px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* spacing between form elements */
+  height: calc(100vh - 120px); /* adjust based on header + nav height */
+  background-color: #121212; /* optional: consistent bg for mobile */
+}
+
+.profile-form input,
+.profile-form select,
+.profile-form textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #444;
+  border-radius: 10px;
+  background-color: #1e1e1e;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.profile-form label {
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 4px;
+}
+
 
   .profile-form::-webkit-scrollbar {
     display: none;
   }
 
-  .delete-btn {
-    background: red;
-    border: none;
-    color: #000000;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 12px 0;
-    text-align: left;
-    border-radius: 20px;
-    text-align: center;
-    justify-content: center;
-    width: 350px;
-}
+  button{
+    margin-bottom: 100px;
+  }
+
 }
 /* From Uiverse.io by Peary74 */ 
 button {

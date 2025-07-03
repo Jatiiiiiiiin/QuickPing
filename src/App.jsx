@@ -9,22 +9,26 @@ import ChatUI from './pages/ChatUI.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
 import { Settings } from 'react-feather';
 
+
+
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Starter />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/complete-profile" element={<ProfileSetup />} />
-      <Route
-        path="/home"
-        element={
-          <PrivateRoute>
-            <ChatUI />
-          </PrivateRoute>
-        }
-      />
-    </Routes>
+      <Routes>
+        <Route path="/" element={<Starter />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/complete-profile" element={<ProfileSetup />} />
+        <Route path="/group/:roomId" element={<ChatUI />} />
+
+        <Route
+          path="/home"
+          element={
+            <PrivateRoute>
+              <ChatUI />
+            </PrivateRoute>
+          }
+        />
+      </Routes>
   );
 }
 

@@ -15,7 +15,7 @@ function ProfileNav() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setFirstName(data.firstName || '');  // fallback if undefined
+          setFirstName(data.firstName || '');
         }
       }
     };

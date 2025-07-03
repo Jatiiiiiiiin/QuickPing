@@ -17,12 +17,8 @@ const QRScanner = ({ onScan }) => {
         (decodedText) => {
           console.log("✅ QR Scanned:", decodedText);
           if (onScan) onScan(decodedText);
-
-          // ✅ Do NOT stop the scanner immediately here
-          // Let the parent component decide what to do
         },
         (err) => {
-          // Silent errors while scanning
         }
       )
       .then(() => {
