@@ -783,7 +783,12 @@ body {
 
   .chat-body.keyboard-open {
   flex: none !important;
-  height: 35dvh;
+  max-height: 35dvh;
+  padding-bottom: 80px;
+}
+.chat-window.keyboard-open {
+  flex: none !important;
+  max-height: 45dvh;
   padding-bottom: 80px;
 }
 
